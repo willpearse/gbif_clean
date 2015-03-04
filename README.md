@@ -7,7 +7,7 @@ A set of GBIF cleaning scripts that I find useful. All of them can be run from t
 
 ##Components
 * _text_stripping.py_
-  Filters GBIF records according to fields, and filters out unwanted fields from the dump. Filtering is more important than you might think; the filesizes will become much (~1/10-->1/20th) smaller, and latter calculations much quicker, once it's filtered.
+  Filters GBIF records according to fields, and filters out unwanted fields from the dump. Filtering is more important than you might think; the filesizes will become much (~1/10-->1/20th) smaller, and latter calculations much quicker, once it's filtered. The GLOBAL VARIABLES that determine the filtering are at the top of the script.
 * _gis_intersction.py_
   Outputs the intersection of given (optionally filtered) GBIF records and polygon (tested only with shapefile). Good for finding records on certain continents, habitat types, etc.
 
