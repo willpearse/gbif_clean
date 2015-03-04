@@ -7,7 +7,7 @@
 #and#################
 #GLOBALS#############
 #####################
-import argparse, sys
+import argparse, sys, collections
 MASK = {"hasGeospatialIssues":"FALSE", "hasCoordinate":"TRUE", "basisOfRecord":"OBSERVATION"}
 FIELDS = ['gbifID', 'decimalLatitude', 'decimalLongitude', 'species']
 
@@ -38,6 +38,9 @@ def trim_data(line, header, fields=['gbifID', 'decimalLatitude', 'decimalLongitu
 def main():
     #Argument checking
     args = parser.parse_args()
+
+    #Setup for duplicate-check
+
     
     #Load file
     with open(args.output, "w") as write_handle:
@@ -47,9 +50,21 @@ def main():
             mask = define_mask(header, MASK)
             write_handle.write("\t".join(FIELDS)+"\n")
             #Do work
-            for line in handle:
-                #if mask_data(line, mask):
-                write_handle.write("\t".join(trim_data(line, header, FIELDS))+"\n")
+            # - separately if looking for duplicates as it's slower
+            if args.rm_dups:
+                counter = collections.Counter()
+                count_index = header.split("\t").index("occurrence_id")
+                for line in handle:
+                    curr_id = line.split("\t")][count_index]
+                    counter[curr_id] += 1
+                    if mask_data(line, mask) and counter[curr_id]<=1:
+                        write_handle.write("\t".join(trim_data(line, header, FIELDS))+"\n")
+            else:
+                #No duplicate check
+                for line in handle:
+                    if mask_data(line, mask):
+                        write_handle.write("\t".join(trim_data(line, header, FIELDS))+"\n")
+
 
 
 #####################
@@ -59,4 +74,5 @@ if __name__ == '__main__':
 	parser = argparse.ArgumentParser(description="GBIF Preliminary Cleaning", epilog="http://willpearse.github.com/gbif_clean - Will Pearse (will.pearse@gmail.com)")
 	parser.add_argument("-input", "-i", help="GBIF dump file (full path)", required=True)
         parser.add_argument("-output", "-o", help="Where to write output (full path)", required=True)
+        parser.add_argument("--rm_dups", "-d", help="If given, remove duplicates according to occurrence_id", action="store_true")
 	main()

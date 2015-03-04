@@ -39,7 +39,7 @@ def main():
             write_handle.write(handle.next())
             for line in handle:
                 tmp = line.strip().split("\t")
-                if counts[tmp[sp_index]] >= int(args.threshold):
+                if counts[tmp[sp_index]] >= args.threshold:
                     write_handle.write(line)
     
 #####################
@@ -49,5 +49,5 @@ if __name__ == '__main__':
 	parser = argparse.ArgumentParser(description="GBIF Preliminary Cleaning", epilog="http://willpearse.github.com/gbif_clean - Will Pearse (will.pearse@gmail.com)")
 	parser.add_argument("-input", "-i", help="GBIF dump file (full path)", required=True)
         parser.add_argument("-output", "-o", help="Where to write output (full path)", required=True)
-        parser.add_argument("-threshold", "-t", help="Thresold occurrence for keeping values (supply to generate trimmed list, else species-occurrence table is output)")
+        parser.add_argument("-threshold", "-t", help="Thresold occurrence for keeping values (supply to generate trimmed list, else species-occurrence table is output)", type=int)
 	main()
