@@ -10,7 +10,7 @@
 import argparse, sys
 from qgis.core import *
 import qgis.utils, processing
-QgsApplication.initQgis("/usr/share/qgis", True)
+QgsApplication.initQgis("/usr", True)
 
 #####################
 #MAIN################

@@ -55,7 +55,7 @@ def main():
                 counter = collections.Counter()
                 count_index = header.split("\t").index("occurrence_id")
                 for line in handle:
-                    curr_id = line.split("\t")][count_index]
+                    curr_id = line.split("\t")[count_index]
                     counter[curr_id] += 1
                     if mask_data(line, mask) and counter[curr_id]<=1:
                         write_handle.write("\t".join(trim_data(line, header, FIELDS))+"\n")
