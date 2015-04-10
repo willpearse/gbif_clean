@@ -8,7 +8,7 @@
 #GLOBALS#############
 #####################
 import argparse, sys, collections
-MASK = {"hasGeospatialIssues":"FALSE", "hasCoordinate":"TRUE", "basisOfRecord":"OBSERVATION"}
+MASK = {"hasGeospatialIssues":"false", "hasCoordinate":"true", "basisOfRecord":"OBSERVATION"}
 FIELDS = ['gbifID', 'decimalLatitude', 'decimalLongitude', 'species']
 
 #####################
