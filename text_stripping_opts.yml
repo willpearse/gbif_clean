@@ -1,0 +1,34 @@
+mask:
+  hasCoordinate: "TRUE"
+
+spatial_issue_mask:
+  - "Zero coordinate"
+  - "Coordinate rounded"
+  - "Geodetic datum invalid"
+  - "Coordinate reprojection failed"
+  - "Country coordinate mismatch"
+  - "Country mismatch"
+  - "Country invalid"
+  - "Continent country mismatch"
+  - "Continent invalid"
+  - "Presumed negated latitude"
+  - "Recorded date mismatch"
+  - "Recorded date invalid"
+  - "Recorded date unlikely"
+  - "Basis of record invalid"
+  - "Type status invalid"
+  - "Interpretation error"
+
+output_fields:
+  - gbifID
+  - decimalLatitude
+  - decimalLongitude
+  - species
+
+#file: /home/will/gbif/raw_data/plantae_dump/occurrence.txt
+input_file: /home/will/test.txt
+
+#output_file: /home/will/gbif/clean_data/gbif_plantae_nescent.txt
+output_file: /home/will/test_out.txt
+
+output_names: /home/will/test_names.txt

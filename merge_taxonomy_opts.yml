@@ -1,0 +1,7 @@
+input_gbif: /home/will/test_out.txt
+
+input_match: /home/will/Code/taxon-name-utils/data/name-lists/tank-tree-names.txt
+
+output_lookup: /home/will/lookup.txt
+
+output_gbif: /home/will/output_taxon.txt
