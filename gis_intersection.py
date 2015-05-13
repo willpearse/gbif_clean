@@ -1,85 +1,63 @@
 #!/usr/bin/python
-#Preliminary checking and filtering of GBIF data
-#Will Pearse - 2015-02-24
+# Intersecting data according to buffer
 
-#####################
-#HEADERS#############
-#and#################
-#GLOBALS#############
-#####################
-import argparse, sys, os
+def enumerate_chunk_stream(stream, size):
+    chunk = []
+    iter = 0
+    for i,each in enumerate(stream):
+        if (i % size == 0) and i != 0:
+            yield iter, chunk
+            chunk = []
+            iter += 1
+        chunk.append(each)
+    if len(chunk) > 0:
+        yield iter, chunk
+
+#Load params
+import sys, yaml, subprocess, os
+with (sys.argv[1]) as handle:
+    params = yaml.load(handle)
+
+#Setup QGIS
 from qgis.core import *
-sys.path.append("/usr/share/qgis/python/plugins/")
+sys.path.append(params["qgis_plugins_path"])
 import qgis.utils
 from PyQt4.QtCore import QFileInfo
-
-#####################
-#MAIN################
-#####################
-def main():
-    #Argument checking and setup
-    args = parser.parse_args()
-    #os.environ['DISPLAY']=""
-    app = QgsApplication([], True)
-    QgsApplication.setPrefixPath("/usr", True)
-    QgsApplication.initQgis()
-    import processing
-    from processing.core.Processing import Processing
-    Processing.initialize()
+app = QgsApplication([], True)
+QgsApplication.setPrefixPath(params["qgis_path"], True)
+QgsApplication.initQgis()
+import processing #*must* be done here
+from processing.core.Processing import Processing
+Processing.initialize()
     
-    #Setup QGIS and buffer layer
-    buffer = QgsVectorLayer(args.mask, "buffer", "ogr")
-    #buffer_raster = QgsRasterLayer(args.mask, "buffer_raster")
-    #QgsMapLayerRegistry.instance().addMapLayer(buffer_raster)
-    #processing.runalg("gdalogr:polygonize", "buffer_raster", False, "buffer_shp")
-    #buffer = QgsVectorLayer("buffer_shp", "buffer", "ogr")
-    QgsMapLayerRegistry.instance().addMapLayer(buffer)
+#Load buffer
+buffer = QgsVectorLayer(params["buffer_file"], "buffer", "ogr")
+QgsMapLayerRegistry.instance().addMapLayer(buffer)
     
-    #Chunk through file
-    count = 0
-    with open(args.output, "w") as final_handle:
-        with open(args.gbif) as handle:
-            header = handle.next()
-            curr_chunk = [header]
-            for i,line in enumerate(handle):
-                curr_chunk.append(line)
-                if ((i % int(args.chunk_size)) == 0) and (i!=0):
-                    #Write out to temp file
-                    with open (args.temp+"_subset_"+str(count), "w") as temp_handle:
-                        for each in curr_chunk:
-                            temp_handle.write(each)
-                    #Perform GIS and and write out
-                    layer = QgsVectorLayer("file://"+args.temp+"_subset_"+str(count)+"?delimiter=%s&xField=%s&yField=%s&crs=epsg:4326" % ("\t", "decimalLongitude", "decimalLatitude"), "curr_chunk", "delimitedtext")
-                    QgsMapLayerRegistry.instance().addMapLayer(layer)
-                    processing.runalg("qgis:intersection", layer, buffer, args.temp+"_subset_"+str(count))
-                    QgsMapLayerRegistry.instance().removeMapLayer(layer.id())
-                    count += 1
-                    curr_chunk = [header]
-            else:
-                #Finish up chunking
-                if len(curr_chunk) > 1:
-                    with open (args.temp+"_subset_"+str(count), "w") as temp_handle:
-                        for each in curr_chunk:
-                            temp_handle.write(each)
-                    #Perform GIS and and write out
-                    layer = QgsVectorLayer("file://"+args.temp+"_subset_"+str(count)+"?delimiter=%s&xField=%s&yField=%s&crs=epsg:4326" % ("\t", "decimalLongitude", "decimalLatitude"), "curr_chunk", "delimitedtext")
-                    QgsMapLayerRegistry.instance().addMapLayer(layer)
-                    processing.runalg("qgis:intersection", layer, buffer, args.temp+"_subset_"+str(count))
-                #Merge layers
-                print "merging..."
-    
-    print "finished"
-    QgsApplication.exitQgis()
+#Read file and intersect
 
+with open(params["output_file"], "w") as final_handle:
+    with open(params["input_file"]) as handle:
+        header = handle.next()
+        for i, chunk in enumerate_chunk_stream(handle, params["chunk_size"]):
+            #Chunk out
+            with open(params["temp_file"], "w") as temp_handle:
+                temp_handle.write(header)
+                [temp_handle.write(each) for each in chunk]
+        #Intersect
+        layer = QgsVectorLayer("file://"+params["temp_file"]+"?delimiter=%s&xField=%s&yField=%s&crs=epsg:4326" % ("\t", "decimalLongitude", "decimalLatitude"), "curr_chunk", "delimitedtext")
+        QgsMapLayerRegistry.instance().addMapLayer(layer)
+        processing.runalg("qgis:difference", layer, buffer, params["temp_file"])
+        QgsMapLayerRegistry.instance().removeMapLayer(layer.id())
+        #Merge (if necessary)
+        try:
+            os.remove(params["temp_file"]+".csv")
+        except OSError:
+            pass
+        subprocess.call(["ogr2ogr", "-f", "CSV", params["temp_file"]+".csv", params["temp_file"]+".shp", "-lco", "GEOMETRY=AS_WKT"])
+        with open(params["temp_file"]+".csv") as temp_handle:
+            [final_handle.write(each) for each in temp_handle]
 
-#####################
-#ARGUMENT HANDLING###
-#####################    
-if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description="GBIF Intersecting with GIS mask", epilog="http://willpearse.github.com/gbif_clean - Will Pearse (will.pearse@gmail.com)\nRequires QGIS to be correctly setup for scripting - YMMV...")
-    parser.add_argument("-gbif", "-i", help="GBIF file (full path)", required=True)
-    parser.add_argument("-mask", "-m", help="Raster for intersection (full path)", required=True)
-    parser.add_argument("-output", "-o", help="Where to write output (full path)", required=True)
-    parser.add_argument("-temp", "-t", help="Stem-name for output (full-path)", required=True)
-    parser.add_argument("-chunk_size", "-c", help="Chunk size (integer)", default=100000)
-    main()
+#Cleanup
+os.remove(params["temp_file"]+".csv")
+QgsApplication.exitQgis()

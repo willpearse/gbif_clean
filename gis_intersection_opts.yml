@@ -1,0 +1,13 @@
+qgis_path: /usr
+
+qgis_plugins_path: /usr/share/qgis/python/plugins/
+
+input_file: /home/will/test_out.txt
+
+output_file: /home/will/test_intersect
+
+buffer_file: /home/will/Code/gbif_clean/herbaria/herbaria_buffer_0-01.shp
+
+temp_file: /home/will/test_temp
+
+chunk_size: 1000
